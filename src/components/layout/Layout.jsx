@@ -2,6 +2,7 @@ import React from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, LogOut } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
+import logo from '../../assets/logo.png'
 
 export function Layout() {
     const location = useLocation()
@@ -13,11 +14,9 @@ export function Layout() {
             {/* Sidebar */}
             <aside className="fixed left-0 top-0 h-full w-64 glass-panel border-r border-white/10 z-20 hidden md:block">
                 <div className="p-6">
-                    <h1 className="text-2xl font-bold tracking-tighter">
-                        <span className="text-white">Hype</span>
-                        <span className="text-transparent bg-clip-text bg-cyber-gradient">Loop</span>
-                    </h1>
-                    <p className="text-xs text-gray-400 mt-1">Admin Dashboard</p>
+                    <div className="flex items-center">
+                        <img src={logo} alt="HypeLoop" className="h-24 w-auto" />
+                    </div>
                 </div>
 
                 <nav className="mt-6 px-4 space-y-2">
@@ -48,10 +47,7 @@ export function Layout() {
             <div className="flex-1 md:ml-64 relative min-h-screen">
                 {/* Mobile Header */}
                 <header className="md:hidden glass-panel sticky top-0 z-30 px-6 py-4 flex items-center justify-between">
-                    <h1 className="text-lg font-bold tracking-tighter">
-                        <span className="text-white">Hype</span>
-                        <span className="text-transparent bg-clip-text bg-cyber-gradient">Loop</span>
-                    </h1>
+                    <img src={logo} alt="HypeLoop" className="h-12 w-auto" />
                     <button className="p-2 text-gray-400">
                         <LayoutDashboard size={24} />
                     </button>

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import logo from '../assets/logo.png'
 
 export default function Login() {
     const [email, setEmail] = useState('')
@@ -47,11 +48,9 @@ export default function Login() {
 
             <div className="w-full max-w-md glass-panel p-8 rounded-2xl z-10 relative">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-bold tracking-tighter mb-2">
-                        <span className="text-white">Hype</span>
-                        <span className="text-transparent bg-clip-text bg-cyber-gradient">Loop</span>
-                    </h1>
-                    <p className="text-gray-400 text-sm">Acceso Administrativo</p>
+                    <div className="flex justify-center">
+                        <img src={logo} alt="HypeLoop" className="h-32 w-auto" />
+                    </div>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
@@ -98,26 +97,6 @@ export default function Login() {
                     >
                         {loading ? 'Entrando...' : 'Iniciar Sesión'}
                     </button>
-
-                    {/* Temporary Signup for Development */}
-                    <div className="text-center mt-4">
-                        <p className="text-sm text-gray-500">¿No tienes cuenta?</p>
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                const email = prompt("Email para admin:");
-                                const password = prompt("Contraseña:");
-                                if (email && password) {
-                                    const { error } = await supabase.auth.signUp({ email, password });
-                                    if (error) alert(error.message);
-                                    else alert("Usuario creado! Revisa tu email o logueate si desactivaste confirmación.");
-                                }
-                            }}
-                            className="text-xs text-primary hover:underline mt-1"
-                        >
-                            Crear Admin (Dev Mode)
-                        </button>
-                    </div>
                 </form>
             </div>
         </div>
