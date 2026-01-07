@@ -1,6 +1,7 @@
 import React from 'react'
 import { Outlet, Link, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Users, LogOut } from 'lucide-react'
+import { supabase } from '../../lib/supabase'
 
 export function Layout() {
     const location = useLocation()
@@ -31,12 +32,17 @@ export function Layout() {
                 </nav>
 
                 <div className="absolute bottom-8 left-0 w-full px-4">
-                    <button className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 hover:text-red-500 text-gray-400 transition-colors">
+                    <button
+                        onClick={async () => {
+                            await supabase.auth.signOut()
+                            window.location.reload() // Force reload to clear state cleanly
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 w-full rounded-xl hover:bg-red-500/10 hover:text-red-500 text-gray-400 transition-colors"
+                    >
                         <LogOut size={20} />
                         <span className="font-medium">Cerrar Sesión</span>
                     </button>
-                </div>
-            </aside>
+                </div>            </aside>
 
             {/* Main Content */}
             <div className="flex-1 md:ml-64 relative min-h-screen">
