@@ -63,7 +63,7 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
 
         setUploading(true);
         try {
-            // Verificar que el bucket existe
+            // Verificar que el bucket existe (case-insensitive)
             const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
             
             if (bucketsError) {
@@ -71,18 +71,25 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                 throw new Error('No se pudo verificar los buckets de almacenamiento');
             }
 
-            const bucketExists = buckets?.some(bucket => bucket.name === 'client-assets');
-            if (!bucketExists) {
-                throw new Error('El bucket "client-assets" no existe. Por favor créalo en Supabase Storage.');
+            // Buscar el bucket (puede estar en mayúsculas o minúsculas)
+            const bucketName = buckets?.find(b => 
+                b.name.toLowerCase() === 'client-assets' || 
+                b.name === 'client-assets' || 
+                b.name === 'CLIENT-ASSETS'
+            )?.name;
+
+            if (!bucketName) {
+                const availableBuckets = buckets?.map(b => b.name).join(', ') || 'ninguno';
+                throw new Error(`El bucket "client-assets" no existe. Buckets disponibles: ${availableBuckets}. Por favor créalo en Supabase Storage.`);
             }
 
             const fileExt = file.name.split('.').pop();
             const fileName = `${client.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `${fileName}`;
 
-            // Upload to Supabase Storage
+            // Upload to Supabase Storage (usar el nombre exacto del bucket)
             const { data: uploadData, error: uploadError } = await supabase.storage
-                .from('client-assets')
+                .from(bucketName)
                 .upload(filePath, file, {
                     cacheControl: '3600',
                     upsert: false
@@ -94,18 +101,18 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                 // Mensajes de error más específicos
                 if (uploadError.message?.includes('new row violates row-level security')) {
                     throw new Error('No tienes permisos para subir archivos. Verifica las políticas RLS del bucket.');
-                } else if (uploadError.message?.includes('Bucket not found')) {
-                    throw new Error('El bucket "client-assets" no fue encontrado. Verifica que esté creado en Supabase.');
-                } else if (uploadError.message?.includes('JWT')) {
+                } else if (uploadError.message?.includes('Bucket not found') || uploadError.message?.includes('not found')) {
+                    throw new Error(`El bucket "${bucketName}" no fue encontrado. Verifica que esté creado en Supabase.`);
+                } else if (uploadError.message?.includes('JWT') || uploadError.message?.includes('auth')) {
                     throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
                 } else {
                     throw new Error(uploadError.message || 'Error al subir el archivo');
                 }
             }
 
-            // Get Public URL
+            // Get Public URL (usar el nombre exacto del bucket)
             const { data: { publicUrl } } = supabase.storage
-                .from('client-assets')
+                .from(bucketName)
                 .getPublicUrl(filePath);
 
             // Save reference to DB
@@ -124,7 +131,7 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                 console.error('DB error:', dbError);
                 // Si falla la inserción en DB, intentar eliminar el archivo del storage
                 await supabase.storage
-                    .from('client-assets')
+                    .from(bucketName)
                     .remove([filePath]);
                 throw new Error('Error al guardar la referencia del archivo en la base de datos');
             }
