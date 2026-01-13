@@ -63,16 +63,45 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
 
         setUploading(true);
         try {
+            // Verificar que el bucket existe
+            const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
+            
+            if (bucketsError) {
+                console.error('Error checking buckets:', bucketsError);
+                throw new Error('No se pudo verificar los buckets de almacenamiento');
+            }
+
+            const bucketExists = buckets?.some(bucket => bucket.name === 'client-assets');
+            if (!bucketExists) {
+                throw new Error('El bucket "client-assets" no existe. Por favor créalo en Supabase Storage.');
+            }
+
             const fileExt = file.name.split('.').pop();
-            const fileName = `${client.id}/${Math.random()}.${fileExt}`;
+            const fileName = `${client.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `${fileName}`;
 
             // Upload to Supabase Storage
-            const { error: uploadError } = await supabase.storage
+            const { data: uploadData, error: uploadError } = await supabase.storage
                 .from('client-assets')
-                .upload(filePath, file);
+                .upload(filePath, file, {
+                    cacheControl: '3600',
+                    upsert: false
+                });
 
-            if (uploadError) throw uploadError;
+            if (uploadError) {
+                console.error('Upload error details:', uploadError);
+                
+                // Mensajes de error más específicos
+                if (uploadError.message?.includes('new row violates row-level security')) {
+                    throw new Error('No tienes permisos para subir archivos. Verifica las políticas RLS del bucket.');
+                } else if (uploadError.message?.includes('Bucket not found')) {
+                    throw new Error('El bucket "client-assets" no fue encontrado. Verifica que esté creado en Supabase.');
+                } else if (uploadError.message?.includes('JWT')) {
+                    throw new Error('Error de autenticación. Por favor, inicia sesión nuevamente.');
+                } else {
+                    throw new Error(uploadError.message || 'Error al subir el archivo');
+                }
+            }
 
             // Get Public URL
             const { data: { publicUrl } } = supabase.storage
@@ -91,14 +120,24 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                 }])
                 .select();
 
-            if (dbError) throw dbError;
+            if (dbError) {
+                console.error('DB error:', dbError);
+                // Si falla la inserción en DB, intentar eliminar el archivo del storage
+                await supabase.storage
+                    .from('client-assets')
+                    .remove([filePath]);
+                throw new Error('Error al guardar la referencia del archivo en la base de datos');
+            }
 
             setFiles([dbData[0], ...files]);
         } catch (error) {
             console.error('Error uploading file:', error);
-            alert('Error al subir archivo. Asegúrate de que el bucket "client-assets" exista en Supabase.');
+            const errorMessage = error.message || 'Error desconocido al subir archivo';
+            alert(`Error al subir archivo: ${errorMessage}`);
         } finally {
             setUploading(false);
+            // Resetear el input para permitir subir el mismo archivo de nuevo
+            e.target.value = '';
         }
     };
 
