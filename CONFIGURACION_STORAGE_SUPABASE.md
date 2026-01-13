@@ -34,6 +34,17 @@ En Supabase, las políticas de Storage se configuran **SOLO a través de la inte
 3. Ve a la pestaña **"Policies"** (o **"Políticas"**)
 4. Haz clic en **"New Policy"** o **"Nueva Política"**
 
+#### ⚠️ IMPORTANTE: Usa el nombre EXACTO del bucket
+
+**El nombre del bucket en las políticas debe coincidir EXACTAMENTE con el nombre real del bucket.**
+
+Si tu bucket se llama **"CLIENT-ASSETS"** (en mayúsculas), debes usar **`'CLIENT-ASSETS'`** en las expresiones.  
+Si se llama **"client-assets"** (en minúsculas), usa **`'client-assets'`**.
+
+**🔍 Cómo verificar el nombre exacto:**
+1. Ve a **Storage** → **Buckets**
+2. El nombre que aparece ahí es el que debes usar en las políticas
+
 #### Configurar cada política una por una:
 
 **Política 1: Lectura (SELECT)**
@@ -44,7 +55,7 @@ En Supabase, las políticas de Storage se configuran **SOLO a través de la inte
    - **Policy name:** `Allow authenticated users to read files`
    - **Allowed operation:** `SELECT`
    - **Target roles:** Marca `authenticated`
-   - **USING expression:** `bucket_id = 'client-assets'`
+   - **USING expression:** `bucket_id = 'CLIENT-ASSETS'` ⚠️ **Reemplaza con el nombre EXACTO de tu bucket**
 4. Haz clic en **"Review"** y luego **"Save policy"**
 
 **Política 2: Inserción/Subida (INSERT)**
@@ -55,7 +66,7 @@ En Supabase, las políticas de Storage se configuran **SOLO a través de la inte
    - **Policy name:** `Allow authenticated users to upload files`
    - **Allowed operation:** `INSERT`
    - **Target roles:** Marca `authenticated`
-   - **WITH CHECK expression:** `bucket_id = 'client-assets'`
+   - **WITH CHECK expression:** `bucket_id = 'CLIENT-ASSETS'` ⚠️ **Reemplaza con el nombre EXACTO de tu bucket**
 4. Haz clic en **"Review"** y luego **"Save policy"**
 
 **Política 3: Actualización (UPDATE)**
@@ -66,8 +77,8 @@ En Supabase, las políticas de Storage se configuran **SOLO a través de la inte
    - **Policy name:** `Allow authenticated users to update files`
    - **Allowed operation:** `UPDATE`
    - **Target roles:** Marca `authenticated`
-   - **USING expression:** `bucket_id = 'client-assets'`
-   - **WITH CHECK expression:** `bucket_id = 'client-assets'`
+   - **USING expression:** `bucket_id = 'CLIENT-ASSETS'` ⚠️ **Reemplaza con el nombre EXACTO de tu bucket**
+   - **WITH CHECK expression:** `bucket_id = 'CLIENT-ASSETS'` ⚠️ **Reemplaza con el nombre EXACTO de tu bucket**
 4. Haz clic en **"Review"** y luego **"Save policy"**
 
 **Política 4: Eliminación (DELETE)**
@@ -78,7 +89,7 @@ En Supabase, las políticas de Storage se configuran **SOLO a través de la inte
    - **Policy name:** `Allow authenticated users to delete files`
    - **Allowed operation:** `DELETE`
    - **Target roles:** Marca `authenticated`
-   - **USING expression:** `bucket_id = 'client-assets'`
+   - **USING expression:** `bucket_id = 'CLIENT-ASSETS'` ⚠️ **Reemplaza con el nombre EXACTO de tu bucket**
 4. Haz clic en **"Review"** y luego **"Save policy"**
 
 ### Paso 3: Verificar la Configuración
