@@ -61,31 +61,68 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
         const file = e.target.files[0];
         if (!file) return;
 
+        if (!supabase) {
+            alert('Error: Supabase no está configurado correctamente');
+            return;
+        }
+
         setUploading(true);
         try {
-            // Verificar que el bucket existe (case-insensitive)
+            // Intentar primero con el nombre exacto que vemos en Supabase (CLIENT-ASSETS)
+            // Si falla, intentar con minúsculas
+            const possibleBucketNames = ['CLIENT-ASSETS', 'client-assets', 'Client-Assets'];
+            let bucketName = null;
+            let lastError = null;
+
+            // Primero intentar listar buckets para verificar
             const { data: buckets, error: bucketsError } = await supabase.storage.listBuckets();
             
             if (bucketsError) {
                 console.error('Error checking buckets:', bucketsError);
-                throw new Error('No se pudo verificar los buckets de almacenamiento');
+                console.log('Intentando con nombres de bucket conocidos...');
+            } else {
+                console.log('Buckets disponibles:', buckets?.map(b => b.name));
+                // Buscar el bucket (case-insensitive)
+                bucketName = buckets?.find(b => 
+                    b.name.toLowerCase() === 'client-assets'
+                )?.name;
+                
+                if (bucketName) {
+                    console.log('Bucket encontrado:', bucketName);
+                }
             }
 
-            // Buscar el bucket (puede estar en mayúsculas o minúsculas)
-            const bucketName = buckets?.find(b => 
-                b.name.toLowerCase() === 'client-assets' || 
-                b.name === 'client-assets' || 
-                b.name === 'CLIENT-ASSETS'
-            )?.name;
+            // Si no se encontró, intentar con los nombres posibles
+            if (!bucketName) {
+                for (const name of possibleBucketNames) {
+                    try {
+                        // Intentar hacer una operación simple para verificar si el bucket existe
+                        const { data, error } = await supabase.storage.from(name).list('', { limit: 1 });
+                        if (!error) {
+                            bucketName = name;
+                            console.log('Bucket encontrado por prueba:', bucketName);
+                            break;
+                        }
+                        lastError = error;
+                    } catch (err) {
+                        lastError = err;
+                        continue;
+                    }
+                }
+            }
 
             if (!bucketName) {
                 const availableBuckets = buckets?.map(b => b.name).join(', ') || 'ninguno';
-                throw new Error(`El bucket "client-assets" no existe. Buckets disponibles: ${availableBuckets}. Por favor créalo en Supabase Storage.`);
+                const errorMsg = `El bucket "client-assets" no existe o no tienes acceso. Buckets disponibles: ${availableBuckets}. Error: ${lastError?.message || 'Desconocido'}`;
+                console.error('Bucket no encontrado. Error:', lastError);
+                throw new Error(errorMsg);
             }
 
             const fileExt = file.name.split('.').pop();
             const fileName = `${client.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
             const filePath = `${fileName}`;
+
+            console.log('Subiendo archivo a bucket:', bucketName, 'Path:', filePath);
 
             // Upload to Supabase Storage (usar el nombre exacto del bucket)
             const { data: uploadData, error: uploadError } = await supabase.storage
