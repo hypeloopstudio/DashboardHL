@@ -37,12 +37,12 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                 .from('Clients')
                 .update({
                     name: formData.name,
-                    email: formData.email,
-                    phone: formData.phone,
-                    website: formData.website,
-                    service_type: formData.service_type,
-                    amount_charged: formData.amount_charged,
-                    notes: formData.notes
+                    email: formData.email || null,
+                    phone: formData.phone || null,
+                    website: formData.website?.trim() || null, // Opcional: convertir string vacío a null
+                    service_type: formData.service_type || null,
+                    amount_charged: formData.amount_charged || null,
+                    notes: formData.notes || null
                 })
                 .eq('id', client.id);
 
@@ -251,9 +251,10 @@ export const ClientModal = ({ client, onClose, onUpdate }) => {
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Sitio Web</label>
+                                    <label className="block text-sm text-gray-400 mb-1">Sitio Web <span className="text-gray-500 text-xs">(opcional)</span></label>
                                     <input
-                                        type="url" name="website" value={formData.website || ''} onChange={handleChange}
+                                        type="text" name="website" value={formData.website || ''} onChange={handleChange}
+                                        placeholder="https://ejemplo.com"
                                         className="w-full bg-white/5 border border-white/10 rounded-lg p-3 text-white focus:border-primary/50 outline-none"
                                     />
                                 </div>
