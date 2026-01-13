@@ -10,6 +10,8 @@ import Dashboard from './pages/Dashboard'
 import Leads from './pages/Leads'
 import PossibleClients from './pages/PossibleClients'
 
+import Clients from './pages/Clients'
+
 function PrivateRoute({ children }) {
   const [session, setSession] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -59,6 +61,7 @@ function App() {
           <Route index element={<Dashboard />} />
           <Route path="leads" element={<Leads />} />
           <Route path="possible-clients" element={<PossibleClients />} />
+          <Route path="clients" element={<Clients />} />
         </Route>
       </Routes>
     </BrowserRouter>

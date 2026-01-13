@@ -45,6 +45,10 @@ export function Layout() {
                         <UserPlus size={20} />
                         <span className="font-medium">Posibles Clientes</span>
                     </Link>
+                    <Link to="/clients" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive('/clients') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>
+                        <Users size={20} />
+                        <span className="font-medium">Clientes</span>
+                    </Link>
                 </nav>
 
                 <div className="absolute bottom-8 left-0 w-full px-4">
@@ -65,7 +69,7 @@ export function Layout() {
                 {/* Mobile Header */}
                 <header className="md:hidden glass-panel sticky top-0 z-30 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-center border-b border-white/10 relative">
                     <img src={logo} alt="HypeLoop" className="h-10 sm:h-12 w-auto" />
-                    <button 
+                    <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                         className="absolute right-4 sm:right-6 p-2 text-gray-400 hover:text-white active:text-white transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
                         aria-label="Menú"
@@ -81,7 +85,7 @@ export function Layout() {
                             <div className="p-6 border-b border-white/10">
                                 <div className="flex items-center justify-between mb-6">
                                     <img src={logo} alt="HypeLoop" className="h-16 w-auto" />
-                                    <button 
+                                    <button
                                         onClick={() => setMobileMenuOpen(false)}
                                         className="p-2 text-gray-400 hover:text-white transition-colors"
                                     >
@@ -111,6 +115,13 @@ export function Layout() {
                                 >
                                     <UserPlus size={20} />
                                     <span className="font-medium">Posibles Clientes</span>
+                                </button>
+                                <button
+                                    onClick={() => handleNavigate('/clients')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${isActive('/clients') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
+                                >
+                                    <Users size={20} />
+                                    <span className="font-medium">Clientes</span>
                                 </button>
                             </nav>
 
