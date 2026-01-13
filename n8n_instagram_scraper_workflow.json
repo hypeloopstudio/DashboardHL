@@ -1,0 +1,207 @@
+{
+    "name": "Scrape Instagram Profile",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "scrape-instagram",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.body.instagram_url }}",
+                "options": {
+                    "redirect": {
+                        "redirect": {
+                            "followRedirects": true
+                        }
+                    }
+                },
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                        },
+                        {
+                            "name": "Accept-Language",
+                            "value": "en-US,en;q=0.9"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request",
+            "name": "HTTP Request (Get Profile)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "extractHtmlContent",
+                "dataPropertyName": "data",
+                "extractionValues": {
+                    "values": [
+                        {
+                            "key": "title_tag",
+                            "cssSelector": "meta[property=\"og:title\"]",
+                            "returnValue": "attribute",
+                            "attribute": "content"
+                        },
+                        {
+                            "key": "image_tag",
+                            "cssSelector": "meta[property=\"og:image\"]",
+                            "returnValue": "attribute",
+                            "attribute": "content"
+                        },
+                        {
+                            "key": "description_tag",
+                            "cssSelector": "meta[property=\"og:description\"]",
+                            "returnValue": "attribute",
+                            "attribute": "content"
+                        }
+                    ]
+                }
+            },
+            "id": "html-extract",
+            "name": "HTML Extract",
+            "type": "n8n-nodes-base.htmlExtract",
+            "typeVersion": 1,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Limpieza básica de los datos extraídos\nconst title = $input.item.json.title_tag || '';\nconst image = $input.item.json.image_tag || null;\n\n// Obtener el id del webhook original\nconst webhookData = $('Webhook').first().json.body;\nconst recordId = webhookData?.id || null;\n\n// Intentar extraer el username del título (Ej: \"Nombre (@username) ...\")\nlet username = 'Sin nombre';\nconst match = title.match(/\\(@([^)]+)\\)/);\nif (match && match[1]) {\n  username = match[1];\n} else if (title) {\n    // Fallback: usar el título completo si no hay paréntesis\n    username = title.split('•')[0].trim();\n}\n\n// Devolver todos los datos necesarios incluyendo el id\nreturn {\n  json: {\n    id: recordId,\n    username: username,\n    profile_pic_url: image\n  }\n};"
+            },
+            "id": "code-clean",
+            "name": "Code (Clean Data)",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "value": "public",
+                    "mode": "list",
+                    "cachedResultName": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "PosiblesClientes",
+                    "mode": "list",
+                    "cachedResultName": "PosiblesClientes"
+                },
+                "updateKey": "id",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "username": "={{ $json.username }}",
+                        "profile_pic_url": "={{ $json.profile_pic_url }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "username",
+                            "displayName": "username",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "profile_pic_url",
+                            "displayName": "profile_pic_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                }
+            },
+            "id": "supabase-update",
+            "name": "Supabase Update",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "YOUR_CREDENTIAL_ID_HERE",
+                    "name": "Supabase account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request (Get Profile)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request (Get Profile)": {
+            "main": [
+                [
+                    {
+                        "node": "HTML Extract",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTML Extract": {
+            "main": [
+                [
+                    {
+                        "node": "Code (Clean Data)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Code (Clean Data)": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

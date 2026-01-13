@@ -1,0 +1,196 @@
+{
+    "name": "Scrape Instagram via Imginn",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "scrape-instagram",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extraer el username de la URL de Instagram\nconst url = $input.item.json.body.instagram_url || '';\nconst match = url.match(/(?:instagram\\.com|instagr\\.am)\\/([A-Za-z0-9_\\.]+)/);\nconst username = match ? match[1] : null;\n\n// Obtener el id del webhook original\nconst recordId = $input.item.json.body?.id || null;\n\nreturn {\n  json: {\n    id: recordId,\n    original_url: url,\n    username: username,\n    // Usamos Imginn que es más estable\n    proxy_url: `https://imginn.com/${username}/`\n  }\n};"
+            },
+            "id": "prepare-url",
+            "name": "Extract Username",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.proxy_url }}",
+                "options": {
+                    "redirect": {
+                        "redirect": {
+                            "followRedirects": true
+                        }
+                    }
+                },
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) width=100%25 height=100%25"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request",
+            "name": "HTTP Request (Imginn)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "extractHtmlContent",
+                "dataPropertyName": "data",
+                "extractionValues": {
+                    "values": [
+                        {
+                            "key": "name",
+                            "cssSelector": ".user-info h1",
+                            "returnValue": "text"
+                        },
+                        {
+                            "key": "image_url",
+                            "cssSelector": ".user-img img",
+                            "returnValue": "attribute",
+                            "attribute": "src"
+                        }
+                    ]
+                }
+            },
+            "id": "html-extract",
+            "name": "HTML Extract",
+            "type": "n8n-nodes-base.htmlExtract",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "value": "public",
+                    "mode": "list",
+                    "cachedResultName": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "PosiblesClientes",
+                    "mode": "list",
+                    "cachedResultName": "PosiblesClientes"
+                },
+                "updateKey": "id",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "username": "={{ $json.name ? $json.name.trim() : $json.username }}",
+                        "profile_pic_url": "={{ $json.image_url }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "username",
+                            "displayName": "username",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "profile_pic_url",
+                            "displayName": "profile_pic_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                }
+            },
+            "id": "supabase-update",
+            "name": "Supabase Update",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "YOUR_CREDENTIAL_ID_HERE",
+                    "name": "Supabase account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Username",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Username": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request (Imginn)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request (Imginn)": {
+            "main": [
+                [
+                    {
+                        "node": "HTML Extract",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTML Extract": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -1,0 +1,209 @@
+{
+    "name": "Scrape Instagram via DuckDuckGo",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "scrape-instagram",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extraer el username de la URL de Instagram\nconst url = $input.item.json.body.instagram_url || '';\nconst match = url.match(/(?:instagram\\.com|instagr\\.am)\\/([A-Za-z0-9_\\.]+)/);\nconst username = match ? match[1] : null;\n\nreturn {\n  json: {\n    original_url: url,\n    username: username,\n    // Buscamos en DuckDuckGo HTML\n    search_url: `https://html.duckduckgo.com/html/?q=site:instagram.com+${username}`\n  }\n};"
+            },
+            "id": "prepare-url",
+            "name": "Prepare Search",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ $json.search_url }}",
+                "options": {
+                    "redirect": {
+                        "redirect": {
+                            "followRedirects": true
+                        }
+                    }
+                },
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request",
+            "name": "HTTP Request (DuckDuckGo)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "extractHtmlContent",
+                "dataPropertyName": "data",
+                "extractionValues": {
+                    "values": [
+                        {
+                            "key": "title",
+                            "cssSelector": ".result__title",
+                            "returnValue": "text"
+                        },
+                        {
+                            "key": "snippet",
+                            "cssSelector": ".result__snippet",
+                            "returnValue": "text"
+                        }
+                    ]
+                }
+            },
+            "id": "html-extract",
+            "name": "HTML Extract",
+            "type": "n8n-nodes-base.htmlExtract",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Limpiar el título obtenido de DuckDuckGo\nconst rawTitle = $input.item.json.title || '';\n// Formato típico: \"Nombre (@usuario) • Instagram photos...\"\nlet name = rawTitle.split('(@')[0].trim();\n// Si falla, usar el username original\nif (!name || name.length > 50) name = $input.item.json.username;\n\nreturn {\n  json: {\n    final_name: name\n  }\n};"
+            },
+            "id": "clean-data",
+            "name": "Clean Data",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "value": "public",
+                    "mode": "list",
+                    "cachedResultName": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "PosiblesClientes",
+                    "mode": "list",
+                    "cachedResultName": "PosiblesClientes"
+                },
+                "updateKey": "id",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "username": "={{ $json.final_name }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "username",
+                            "displayName": "username",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                }
+            },
+            "id": "supabase-update",
+            "name": "Supabase Update",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1560,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "YOUR_CREDENTIAL_ID_HERE",
+                    "name": "Supabase account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Prepare Search",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Prepare Search": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request (DuckDuckGo)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request (DuckDuckGo)": {
+            "main": [
+                [
+                    {
+                        "node": "HTML Extract",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTML Extract": {
+            "main": [
+                [
+                    {
+                        "node": "Clean Data",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Clean Data": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}

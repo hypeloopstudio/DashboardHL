@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 
 // Placeholder for protected pages
 import Leads from './pages/Leads'
+import PossibleClients from './pages/PossibleClients'
 
 function PrivateRoute({ children }) {
   const [session, setSession] = useState(null)
@@ -57,6 +58,7 @@ function App() {
         }>
           <Route index element={<Dashboard />} />
           <Route path="leads" element={<Leads />} />
+          <Route path="possible-clients" element={<PossibleClients />} />
         </Route>
       </Routes>
     </BrowserRouter>

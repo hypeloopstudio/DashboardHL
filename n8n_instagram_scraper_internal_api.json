@@ -1,0 +1,196 @@
+{
+    "name": "Scrape Instagram via Internal API",
+    "nodes": [
+        {
+            "parameters": {
+                "httpMethod": "POST",
+                "path": "scrape-instagram",
+                "options": {}
+            },
+            "id": "webhook-trigger",
+            "name": "Webhook",
+            "type": "n8n-nodes-base.webhook",
+            "typeVersion": 1,
+            "position": [
+                460,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Extraer username\nconst url = $input.item.json.body.instagram_url || '';\nconst match = url.match(/(?:instagram\\.com|instagr\\.am)\\/([A-Za-z0-9_\\.]+)/);\nconst username = match ? match[1] : null;\n\nreturn {\n  json: {\n    username: username\n  }\n};"
+            },
+            "id": "extract-username",
+            "name": "Extract Username",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                680,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{ `https://www.instagram.com/api/v1/users/web_profile_info/?username=${$json.username}` }}",
+                "options": {
+                    "redirect": {
+                        "redirect": {
+                            "followRedirects": false
+                        }
+                    }
+                },
+                "headerParameters": {
+                    "parameters": [
+                        {
+                            "name": "User-Agent",
+                            "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                        },
+                        {
+                            "name": "Cookie",
+                            "value": "sessionid=PEGAR_TU_SESSIONID_AQUI"
+                        },
+                        {
+                            "name": "x-ig-app-id",
+                            "value": "936619501633907"
+                        },
+                        {
+                            "name": "x-asbd-id",
+                            "value": "198387"
+                        },
+                        {
+                            "name": "x-requested-with",
+                            "value": "XMLHttpRequest"
+                        }
+                    ]
+                }
+            },
+            "id": "http-request",
+            "name": "HTTP Request (Internal API)",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 3,
+            "position": [
+                900,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "// Procesar la respuesta JSON de Instagram\nconst userData = $input.item.json.data.user || {};\n\n// Obtener el id del webhook original\nconst webhookData = $('Webhook').first().json.body;\nconst recordId = webhookData?.id || null;\n\nreturn {\n  json: {\n    id: recordId,\n    username: userData.full_name || userData.username,\n    profile_pic_url: userData.profile_pic_url_hd || userData.profile_pic_url\n  }\n};"
+            },
+            "id": "process-api-response",
+            "name": "Process API Response",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 1,
+            "position": [
+                1120,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "update",
+                "schema": {
+                    "__rl": true,
+                    "value": "public",
+                    "mode": "list",
+                    "cachedResultName": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "PosiblesClientes",
+                    "mode": "list",
+                    "cachedResultName": "PosiblesClientes"
+                },
+                "updateKey": "id",
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "username": "={{ $json.username }}",
+                        "profile_pic_url": "={{ $json.profile_pic_url }}"
+                    },
+                    "matchingColumns": [],
+                    "schema": [
+                        {
+                            "id": "username",
+                            "displayName": "username",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        },
+                        {
+                            "id": "profile_pic_url",
+                            "displayName": "profile_pic_url",
+                            "required": false,
+                            "defaultMatch": false,
+                            "display": true,
+                            "type": "string",
+                            "canBeUsedToMatch": true
+                        }
+                    ]
+                }
+            },
+            "id": "supabase-update",
+            "name": "Supabase Update",
+            "type": "n8n-nodes-base.supabase",
+            "typeVersion": 1,
+            "position": [
+                1340,
+                300
+            ],
+            "credentials": {
+                "supabaseApi": {
+                    "id": "YOUR_CREDENTIAL_ID_HERE",
+                    "name": "Supabase account"
+                }
+            }
+        }
+    ],
+    "connections": {
+        "Webhook": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Username",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Extract Username": {
+            "main": [
+                [
+                    {
+                        "node": "HTTP Request (Internal API)",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "HTTP Request (Internal API)": {
+            "main": [
+                [
+                    {
+                        "node": "Process API Response",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        },
+        "Process API Response": {
+            "main": [
+                [
+                    {
+                        "node": "Supabase Update",
+                        "type": "main",
+                        "index": 0
+                    }
+                ]
+            ]
+        }
+    }
+}
