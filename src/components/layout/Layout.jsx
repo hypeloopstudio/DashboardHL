@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Users, LogOut, UserPlus, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Users, LogOut, UserPlus, Menu, X, Briefcase } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import logo from '../../assets/logo.png'
 
@@ -45,9 +45,14 @@ export function Layout() {
                         <UserPlus size={20} />
                         <span className="font-medium">Posibles Clientes</span>
                     </Link>
+
                     <Link to="/clients" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive('/clients') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>
                         <Users size={20} />
                         <span className="font-medium">Clientes</span>
+                    </Link>
+                    <Link to="/internal-ops" className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive('/internal-ops') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}>
+                        <Briefcase size={20} />
+                        <span className="font-medium">Internal Ops</span>
                     </Link>
                 </nav>
 
@@ -116,12 +121,20 @@ export function Layout() {
                                     <UserPlus size={20} />
                                     <span className="font-medium">Posibles Clientes</span>
                                 </button>
+
                                 <button
                                     onClick={() => handleNavigate('/clients')}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${isActive('/clients') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
                                 >
                                     <Users size={20} />
                                     <span className="font-medium">Clientes</span>
+                                </button>
+                                <button
+                                    onClick={() => handleNavigate('/internal-ops')}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${isActive('/internal-ops') ? 'bg-primary/20 text-primary border border-primary/20 shadow-[0_0_15px_rgba(212,0,255,0.1)]' : 'hover:bg-white/5 text-gray-400 hover:text-white'}`}
+                                >
+                                    <Briefcase size={20} />
+                                    <span className="font-medium">Internal Ops</span>
                                 </button>
                             </nav>
 

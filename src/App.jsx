@@ -11,6 +11,7 @@ import Leads from './pages/Leads'
 import PossibleClients from './pages/PossibleClients'
 
 import Clients from './pages/Clients'
+import InternalOps from './pages/InternalOps'
 
 function PrivateRoute({ children }) {
   const [session, setSession] = useState(null)
@@ -62,6 +63,7 @@ function App() {
           <Route path="leads" element={<Leads />} />
           <Route path="possible-clients" element={<PossibleClients />} />
           <Route path="clients" element={<Clients />} />
+          <Route path="internal-ops" element={<InternalOps />} />
         </Route>
       </Routes>
     </BrowserRouter>
