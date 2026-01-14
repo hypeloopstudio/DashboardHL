@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../ui/GlassCard';
-import { Copy, Key, FileCode, Palette, Plus, X } from 'lucide-react';
+import { Copy, Key, FileCode, Palette, Plus, X, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const SharedAssets = () => {
@@ -52,6 +52,27 @@ export const SharedAssets = () => {
             setNewAsset({ title: '', content: '', link: '' });
         } catch (error) {
             console.error('Error adding asset:', error);
+        }
+    };
+
+    const handleDeleteAsset = async (id, e) => {
+        e.preventDefault(); // Prevent copy or other actions
+        e.stopPropagation();
+
+        // Optimistic UI update
+        const originalAssets = [...assets];
+        setAssets(assets.filter(a => a.id !== id));
+
+        try {
+            const { error } = await supabase
+                .from('SharedAssets')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error deleting asset:', error);
+            setAssets(originalAssets); // Revert on failure
         }
     };
 
@@ -135,24 +156,32 @@ export const SharedAssets = () => {
                 {loading && <div className="text-white/50 text-sm">Cargando...</div>}
 
                 {!loading && activeTab === 'prompts' && assets.map(item => (
-                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors group">
+                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors group relative">
                         <div className="flex justify-between items-start gap-4">
                             <div>
                                 <h3 className="font-semibold text-white mb-1">{item.title}</h3>
                                 <p className="text-sm text-gray-400 line-clamp-2">{item.content}</p>
                             </div>
-                            <button
-                                onClick={() => handleCopy(item.content, item.id)}
-                                className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors"
-                            >
-                                <Copy size={16} className={copiedId === item.id ? "text-green-500" : ""} />
-                            </button>
+                            <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <button
+                                    onClick={(e) => handleDeleteAsset(item.id, e)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleCopy(item.content, item.id)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors"
+                                >
+                                    <Copy size={16} className={copiedId === item.id ? "text-green-500" : ""} />
+                                </button>
+                            </div>
                         </div>
                     </GlassCard>
                 ))}
 
                 {!loading && activeTab === 'passwords' && assets.map(item => (
-                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors">
+                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors group relative">
                         <div className="flex justify-between items-center gap-4">
                             <div>
                                 <h3 className="font-semibold text-white mb-1">{item.title}</h3>
@@ -160,24 +189,40 @@ export const SharedAssets = () => {
                                     {item.content}
                                 </p>
                             </div>
-                            <button
-                                onClick={() => handleCopy(item.content, item.id)}
-                                className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors"
-                            >
-                                <Copy size={16} className={copiedId === item.id ? "text-green-500" : ""} />
-                            </button>
+                            <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <button
+                                    onClick={(e) => handleDeleteAsset(item.id, e)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
+                                <button
+                                    onClick={() => handleCopy(item.content, item.id)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-white transition-colors"
+                                >
+                                    <Copy size={16} className={copiedId === item.id ? "text-green-500" : ""} />
+                                </button>
+                            </div>
                         </div>
                     </GlassCard>
                 ))}
 
                 {!loading && activeTab === 'templates' && assets.map(item => (
-                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors">
+                    <GlassCard key={item.id} className="p-4 hover:bg-white/10 transition-colors group relative">
                         <div className="flex justify-between items-center gap-4">
                             <div>
                                 <h3 className="font-semibold text-white mb-1">{item.title}</h3>
                                 <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline">
                                     Abrir en navegador
                                 </a>
+                            </div>
+                            <div className="flex gap-1" onClick={e => e.stopPropagation()}>
+                                <button
+                                    onClick={(e) => handleDeleteAsset(item.id, e)}
+                                    className="p-2 hover:bg-white/10 rounded-lg text-gray-500 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
                         </div>
                     </GlassCard>

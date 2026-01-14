@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../ui/GlassCard';
-import { Clock, Send } from 'lucide-react';
+import { Clock, Send, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const UpdateLog = () => {
@@ -54,6 +54,24 @@ export const UpdateLog = () => {
         }
     };
 
+    const handleDeleteLog = async (id) => {
+        // Optimistic UI update
+        const originalLogs = [...logs];
+        setLogs(logs.filter(l => l.id !== id));
+
+        try {
+            const { error } = await supabase
+                .from('UpdateLogs')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error deleting log:', error);
+            setLogs(originalLogs);
+        }
+    };
+
     const formatTime = (isoString) => {
         const date = new Date(isoString);
         return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
@@ -91,15 +109,23 @@ export const UpdateLog = () => {
                 {loading && <div className="text-white/50 text-sm">Cargando logs...</div>}
 
                 {logs.map((log) => (
-                    <div key={log.id} className="relative pl-6 border-l-2 border-white/10 pb-4 last:pb-0">
+                    <div key={log.id} className="relative pl-6 border-l-2 border-white/10 pb-4 last:pb-0 group">
                         <div className="absolute -left-[9px] top-0 w-4 h-4 rounded-full bg-background-dark border-2 border-primary" />
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                                <span className="font-semibold text-primary">{formatUser(log.user_email)}</span>
-                                <span>•</span>
-                                <span>{formatTime(log.created_at)}</span>
+                        <div className="flex justify-between items-start gap-2">
+                            <div className="flex flex-col gap-1 w-full">
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <span className="font-semibold text-primary">{formatUser(log.user_email)}</span>
+                                    <span>•</span>
+                                    <span>{formatTime(log.created_at)}</span>
+                                </div>
+                                <p className="text-gray-300 text-sm">{log.content}</p>
                             </div>
-                            <p className="text-gray-300 text-sm">{log.content}</p>
+                            <button
+                                onClick={() => handleDeleteLog(log.id)}
+                                className="text-gray-600 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                            >
+                                <Trash2 size={14} />
+                            </button>
                         </div>
                     </div>
                 ))}

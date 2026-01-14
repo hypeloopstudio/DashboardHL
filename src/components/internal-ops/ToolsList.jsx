@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from '../ui/GlassCard';
-import { Wrench, ExternalLink, Plus, X } from 'lucide-react';
+import { Wrench, ExternalLink, Plus, X, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 export const ToolsList = () => {
@@ -53,6 +53,26 @@ export const ToolsList = () => {
         }
     };
 
+    const handleDeleteTool = async (id, e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const originalTools = [...tools];
+        setTools(tools.filter(t => t.id !== id));
+
+        try {
+            const { error } = await supabase
+                .from('InternalTools')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+        } catch (error) {
+            console.error('Error deleting tool:', error);
+            setTools(originalTools);
+        }
+    };
+
     return (
         <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
@@ -99,20 +119,28 @@ export const ToolsList = () => {
                 {loading && <div className="text-white/50 text-sm">Cargando tools...</div>}
 
                 {tools.map(tool => (
-                    <GlassCard key={tool.id} className="p-3 hover:bg-white/10 transition-colors group">
+                    <GlassCard key={tool.id} className="p-3 hover:bg-white/10 transition-colors group relative">
                         <div className="flex justify-between items-start">
-                            <div>
+                            <div className="flex-1 pr-6">
                                 <h3 className="font-semibold text-white text-sm">{tool.name}</h3>
                                 <p className="text-xs text-gray-500">{tool.description}</p>
                             </div>
-                            <a
-                                href={tool.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-gray-500 hover:text-white p-1 rounded hover:bg-white/10"
-                            >
-                                <ExternalLink size={14} />
-                            </a>
+                            <div className="flex items-center gap-1">
+                                <a
+                                    href={tool.link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-gray-500 hover:text-white p-1 rounded hover:bg-white/10"
+                                >
+                                    <ExternalLink size={14} />
+                                </a>
+                                <button
+                                    onClick={(e) => handleDeleteTool(tool.id, e)}
+                                    className="text-gray-500 hover:text-red-400 p-1 rounded hover:bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <Trash2 size={14} />
+                                </button>
+                            </div>
                         </div>
                     </GlassCard>
                 ))}
